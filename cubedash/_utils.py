@@ -51,17 +51,29 @@ NEAR_ANTIMERIDIAN = shape(
 )
 
 # CRS's we use as inference results
+BDC_CRS_CUSTOM = {
+    'epsg:10001': '+proj=aea +lat_1=10 +lat_2=-40 +lat_0=0 +lon_0=-50 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+}
 DEFAULT_CRS_INFERENCES = [4283, 4326]
 MATCH_CUTOFF = 0.38
 
 _LOG = structlog.get_logger()
 
 
+# BDC Custom CRS definition
+def bdc_crs(crs_str: str) -> Optional[str]:
+    pyprojobj = PJCRS(crs_str)
+    for custom_epsg in BDC_CRS_CUSTOM:
+        if pyprojobj == PJCRS(BDC_CRS_CUSTOM[custom_epsg]):
+            return custom_epsg
+    return
+
+
 def infer_crs(crs_str: str) -> Optional[str]:
     plausible_list = [PJCRS.from_epsg(code).to_wkt() for code in DEFAULT_CRS_INFERENCES]
-    closest_wkt = difflib.get_close_matches(crs_str, plausible_list, cutoff=0.38)
+    closest_wkt = difflib.get_close_matches(crs_str, plausible_list, cutoff=MATCH_CUTOFF)
     if len(closest_wkt) == 0:
-        return
+        return bdc_crs(crs_str)
     epsg = PJCRS.from_wkt(closest_wkt[0]).to_epsg()
     return f"epsg:{epsg}"
 
