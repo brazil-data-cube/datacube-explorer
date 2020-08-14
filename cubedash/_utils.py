@@ -52,7 +52,7 @@ NEAR_ANTIMERIDIAN = shape(
 
 # CRS's we use as inference results
 BDC_CRS_CUSTOM = {
-    'epsg:10001': '+proj=aea +lat_1=10 +lat_2=-40 +lat_0=0 +lon_0=-50 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+    'epsg:10001': '+proj=aea +lat_0=-12 +lon_0=-54 +lat_1=-2 +lat_2=-22 +x_0=5000000 +y_0=10000000 +ellps=GRS80 +units=m +no_defs'
 }
 DEFAULT_CRS_INFERENCES = [4283, 4326]
 MATCH_CUTOFF = 0.38
