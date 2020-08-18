@@ -51,9 +51,6 @@ NEAR_ANTIMERIDIAN = shape(
 )
 
 # CRS's we use as inference results
-BDC_CRS_CUSTOM = {
-    'epsg:10001': '+proj=aea +lat_0=-12 +lon_0=-54 +lat_1=-2 +lat_2=-22 +x_0=5000000 +y_0=10000000 +ellps=GRS80 +units=m +no_defs'
-}
 DEFAULT_CRS_INFERENCES = [4283, 4326]
 MATCH_CUTOFF = 0.38
 
@@ -62,9 +59,11 @@ _LOG = structlog.get_logger()
 
 # BDC Custom CRS definition
 def bdc_crs(crs_str: str) -> Optional[str]:
+    from .custom_crs import CUSTOM_CRS_CODE
+
     pyprojobj = PJCRS(crs_str)
-    for custom_epsg in BDC_CRS_CUSTOM:
-        if pyprojobj == PJCRS(BDC_CRS_CUSTOM[custom_epsg]):
+    for custom_epsg in CUSTOM_CRS_CODE:
+        if pyprojobj == PJCRS(CUSTOM_CRS_CODE[custom_epsg]):
             return custom_epsg
     return
 
