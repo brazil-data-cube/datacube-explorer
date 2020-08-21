@@ -19,6 +19,8 @@ from cubedash.summary._stores import ProductSummary
 from datacube.index import index_connect
 from datacube.model import DatasetType
 
+from .middleware import PrefixMiddleware
+
 try:
     from ._version import version as __version__
 except ImportError:
@@ -29,7 +31,8 @@ BASE_DIR = Path(__file__).parent.parent
 
 app = flask.Flask(NAME)
 # Also part of the fix from ^
-app.wsgi_app = ProxyFix(app.wsgi_app)
+# app.wsgi_app = ProxyFix(app.wsgi_app)
+app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/')
 
 # Optional environment settings file or variable
 app.config.from_pyfile(BASE_DIR / "settings.env.py", silent=True)
@@ -58,7 +61,6 @@ DEFAULT_START_PAGE_PRODUCTS = app.config.get("CUBEDASH_DEFAULT_PRODUCTS") or (
 )
 
 _LOG = structlog.get_logger()
-
 
 @cache.memoize(timeout=60)
 def get_time_summary(
