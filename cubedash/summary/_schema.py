@@ -33,7 +33,10 @@ METADATA = MetaData(schema=CUBEDASH_SCHEMA)
 GRIDCELL_COL_SPEC = f"{CUBEDASH_SCHEMA}.gridcell"
 
 # Albers equal area. Allows us to show coverage in m^2 easily.
-FOOTPRINT_SRID = 3577
+## :BDC: Changed to allow the use of BDC products
+from cubedash.custom_crs import SCHEMA_FOOTPRINT_SRID
+
+FOOTPRINT_SRID = SCHEMA_FOOTPRINT_SRID # 3577
 
 DATASET_SPATIAL = Table(
     "dataset_spatial",
