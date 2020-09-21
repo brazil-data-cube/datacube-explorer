@@ -139,6 +139,8 @@ TIME_OVERVIEW = Table(
         nullable=False,
     ),
     Column("footprint_count", Integer, nullable=False),
+    # The SRID definition has been removed from the geometries to allow multiple SRID definitions.
+    # This avoids problems when products with multiple CRS are used
     Column("footprint_geometry", Geometry(spatial_index=False)), # Geometry(srid=FOOTPRINT_SRID, spatial_index=False)),
     Column("crses", postgres.ARRAY(String)),
     # Size of this dataset in bytes, if the product includes it.
