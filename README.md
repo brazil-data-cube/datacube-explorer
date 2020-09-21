@@ -153,6 +153,9 @@ You can alter default [Flask](http://flask.pocoo.org/docs/1.0/config/) or
     STAC_ENDPOINT_ID = 'my-odc-explorer'
     STAC_ENDPOINT_TITLE = 'My ODC Explorer'
     STAC_ENDPOINT_DESCRIPTION = 'Optional Longer description of this endpoint'
+
+    # Customise explorer endpoint ('/' by default)
+    URL_PREFIX = '/odc/explorer'
     
     STAC_DEFAULT_PAGE_SIZE = 20
     STAC_PAGE_SIZE_LIMIT = 1000
@@ -207,6 +210,20 @@ Add a `.datacube_integration.conf` file to your home directory in the same forma
 Then run pytest: `pytest integration_tests`
 
 __Warning__ All data in this database will be dropped while running tests. Use a separate one from your normal development db.
+
+### How to use the explorer with CRS without EPSG defined?
+
+To make this use, it is possible to use the option `--custom-crs-definition-file` available in the CLI of datacube-gen. With this option, a `JSON` file can be defined, in this the customized EPSG are the keys and strings that define the values. See the example below:
+    
+```json
+{
+  "epsg:100001": "+proj=aea +lat_0=-12 +lon_0=-54 +lat_1=-2 +lat_2=-22 +x_0=5000000 +y_0=10000000 +ellps=GRS80 +units=m +no_defs"
+}
+```
+
+> Note that the custom EPSGs codes passed in the above file must be registered in the database.
+
+This same file must also be inserted in the `CUSTOM_CRS_CONFIG_FILE` option in the `settings.env.py` file. This is done to allow the application to consume the settings of these customized EPSGs.
 
 ## Docker for Development and running tests
 You need to have Docker and Docker Compose installed on your system.
