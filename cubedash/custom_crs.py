@@ -1,16 +1,83 @@
 '''
-These EPSG codes need to be entered into the database with the same PROJ String definition as here.
-This is done to create an extra layer and avoid the need to make changes to the proj/pyproj library
+File with features to handle arbitrary definitions that may be needed depending on the
+context in which the datacube-explorer is being applied
 '''
-CUSTOM_CRS_CODE = {
-    'epsg:10001': '+proj=aea +lat_0=-12 +lon_0=-54 +lat_1=-2 +lat_2=-22 +x_0=5000000 +y_0=10000000 +ellps=GRS80 +units=m +no_defs',
-    'epsg:10002': '+proj=aea +lat_1=-1 +lat_2=-29 +lat_0=0 +lon_0=-54 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
-    'epsg:10003': '+proj=aea +lat_1=-1 +lat_2=-29 +lat_0=0 +lon_0=-54 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs'
-}
 
-'''
-This option is being defined to enable the use of custom grids to be more easily worked within the explorer, 
-this avoids the need to assume characteristics on the data, leaving it to those who configure the 
-system to define the CRS that should be used
-'''
-SCHEMA_FOOTPRINT_SRID = 10001
+import json
+from typing import Optional
+from pyproj import CRS as PJCRS
+
+
+class CustomCRSConfigHandlerMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class CustomCRSConfigHandlerSingleton(metaclass=CustomCRSConfigHandlerMeta):
+    """Class to handle a custom crs in JSON format. This class is a singleton implementation. With this, the context
+    can be maintained by the class, allowing its use in different places of the code
+
+    See:
+        https://refactoring.guru/design-patterns/singleton
+    """
+    _configfile = None
+    _configfile_obj = None
+
+    def __init__(self, configfile=None):
+        if configfile:
+            self._configfile = configfile
+
+    def _load_configfile(self):
+        """Load configfile with custom CRS definitions
+        """
+
+        if not self._configfile_obj:
+            try:
+                with open(self._configfile, 'r') as configfilestream:
+                    self._configfile_obj = json.load(configfilestream)
+            except Exception:
+                raise RuntimeError("""
+                Based on the definitions of your projections it was identified the need to use custom CRS. 
+                To do so, define the file with the customized CRS in the CLI of cubedash
+                """)
+        return self._configfile_obj
+
+    def get_custom_epsg(self, crs_str: str) -> Optional[str]:
+        """This function defines the EPSG based on the custom CRS String defined by users in crs's config file
+
+        Args:
+            crs_str (str): crs in projstring or wkt format
+        Returns:
+            Optional[str]: If crs_str is defined by user, a custom EPSG code is returned. This EPSG custom code must
+            have registered in PostgreSQL database
+        """
+        custom_crs_code = self._load_configfile()
+
+        if not custom_crs_code:
+            raise RuntimeError("CUSTOM_CRS_CODES is not defined in settings.env.py")
+
+        pyprojobj = PJCRS(crs_str)
+        for custom_epsg in custom_crs_code:
+            if pyprojobj == PJCRS(custom_crs_code[custom_epsg]):
+                return custom_epsg
+        raise RuntimeError("Custom EPSG is not defined for {}".format(crs_str))
+
+    def get_crs_definition_from_custom_epsg(self, custom_epsg: str) -> Optional[str]:
+        """Based on user definitions, this function retrieves the string definition from a CRS using the
+        custom EPSG code
+        Args:
+            custom_epsg (str): A custom EPSG string
+        Returns:
+            Optional[str]: A custom CRS definition string
+        """
+
+        custom_crs_code = self._load_configfile()
+
+        if not custom_crs_code.get(custom_epsg):
+            raise RuntimeError("A custom CRS definition to {} is not defined!".format(custom_epsg))
+        return custom_crs_code.get(custom_epsg)

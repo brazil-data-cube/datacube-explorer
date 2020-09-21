@@ -9,10 +9,6 @@ import structlog
 from flask_caching import Cache
 from shapely.geometry import MultiPolygon
 
-# Fix up URL Scheme handling using this
-# from https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
-from werkzeug.middleware.proxy_fix import ProxyFix
-
 from cubedash.summary import SummaryStore, TimePeriodOverview
 from cubedash.summary._extents import RegionInfo
 from cubedash.summary._stores import ProductSummary
@@ -20,6 +16,7 @@ from datacube.index import index_connect
 from datacube.model import DatasetType
 
 from .middleware import PrefixMiddleware
+from .custom_crs import CustomCRSConfigHandlerSingleton
 
 try:
     from ._version import version as __version__
@@ -30,13 +27,18 @@ NAME = "cubedash"
 BASE_DIR = Path(__file__).parent.parent
 
 app = flask.Flask(NAME)
-# Also part of the fix from ^
-# app.wsgi_app = ProxyFix(app.wsgi_app)
-app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/')
 
 # Optional environment settings file or variable
 app.config.from_pyfile(BASE_DIR / "settings.env.py", silent=True)
 app.config.from_envvar("CUBEDASH_SETTINGS", silent=True)
+
+# Config custom CRS handler instance
+CustomCRSConfigHandlerSingleton(app.config.get("CUSTOM_CRS_CONFIG_FILE"))
+
+# Also part of the fix from ^
+# app.wsgi_app = ProxyFix(app.wsgi_app)
+url_prefix = app.config.get('URL_PREFIX') or '/'
+app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=url_prefix)
 
 # Enable do template extension
 app.jinja_options["extensions"].append("jinja2.ext.do")

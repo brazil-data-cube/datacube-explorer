@@ -13,7 +13,7 @@ from shapely.geometry.base import BaseGeometry
 from datacube.model import Dataset, Range
 from datacube.utils.geometry import Geometry
 
-from cubedash.custom_crs import CUSTOM_CRS_CODE
+from ..custom_crs import CustomCRSConfigHandlerSingleton
 
 _LOG = structlog.get_logger()
 
@@ -156,11 +156,14 @@ class TimePeriodOverview:
             return None
 
         _crs = self.footprint_crs
-        if self.footprint_crs.lower() in CUSTOM_CRS_CODE:
-            _crs = CUSTOM_CRS_CODE[self.footprint_crs.lower()]
+        try:
+            # If defined, EPSG is customized
+            _crs = CustomCRSConfigHandlerSingleton().get_crs_definition_from_custom_epsg(self.footprint_crs.lower())
+        except RuntimeError as re:
+            _LOG.warn(str(re))
 
         return (
-            Geometry(self.footprint_geometry, _crs) #crs=self.footprint_crs)
+            Geometry(self.footprint_geometry, _crs) # crs=self.footprint_crs)
             .to_crs("EPSG:4326", wrapdateline=True)
             .geom
         )
