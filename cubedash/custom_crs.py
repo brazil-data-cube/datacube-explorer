@@ -58,9 +58,6 @@ class CustomCRSConfigHandlerSingleton(metaclass=CustomCRSConfigHandlerMeta):
         """
         custom_crs_code = self._load_configfile()
 
-        if not custom_crs_code:
-            raise RuntimeError("CUSTOM_CRS_CODES is not defined in settings.env.py")
-
         pyprojobj = PJCRS(crs_str)
         for custom_epsg in custom_crs_code:
             if pyprojobj == PJCRS(custom_crs_code[custom_epsg]):
