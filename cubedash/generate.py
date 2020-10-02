@@ -18,7 +18,7 @@ from datacube.index import Index, index_connect
 from datacube.model import DatasetType
 from datacube.ui.click import config_option, environment_option, pass_config
 
-from .custom_crs import CustomCRSConfigHandlerSingleton
+from cubedash.custom_crs import CustomCRSConfigHandlerSingleton
 
 # Machine (json) logging.
 _LOG = structlog.get_logger()
@@ -174,12 +174,11 @@ def cli(
     """
     init_logging(open(event_log_file, "a") if event_log_file else None, verbose=verbose)
 
-    if custom_crs_definition_file:
-        # save file path in CustomCRSHandler's context
-        CustomCRSConfigHandlerSingleton(custom_crs_definition_file)
-
     index = _get_index(config, "setup")
     store = SummaryStore.create(index)
+
+    if custom_crs_definition_file:
+        CustomCRSConfigHandlerSingleton().configure_database_with_custom_crs(index)
 
     if init_database:
         user_message("Initialising schema")
