@@ -32,8 +32,7 @@ CUBEDASH_SCHEMA = "cubedash"
 METADATA = MetaData(schema=CUBEDASH_SCHEMA)
 GRIDCELL_COL_SPEC = f"{CUBEDASH_SCHEMA}.gridcell"
 
-# Albers equal area. Allows us to show coverage in m^2 easily.
-FOOTPRINT_SRID = 3577
+# ToDo: Define a way to add custom CRS (Albers equal area. Allows us to show coverage in m^2 easily.)
 
 DATASET_SPATIAL = Table(
     "dataset_spatial",
@@ -140,7 +139,9 @@ TIME_OVERVIEW = Table(
         nullable=False,
     ),
     Column("footprint_count", Integer, nullable=False),
-    Column("footprint_geometry", Geometry(srid=FOOTPRINT_SRID, spatial_index=False)),
+    # The SRID definition has been removed from the geometries to allow multiple SRID definitions.
+    # This avoids problems when products with multiple CRS are used
+    Column("footprint_geometry", Geometry(spatial_index=False)), # Geometry(srid=FOOTPRINT_SRID, spatial_index=False)),
     Column("crses", postgres.ARRAY(String)),
     # Size of this dataset in bytes, if the product includes it.
     Column("size_bytes", BigInteger),

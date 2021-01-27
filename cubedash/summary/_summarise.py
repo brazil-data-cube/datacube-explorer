@@ -16,7 +16,6 @@ from cubedash._utils import ODC_DATASET_TYPE
 from cubedash.summary import TimePeriodOverview
 from cubedash.summary._schema import (
     DATASET_SPATIAL,
-    FOOTPRINT_SRID,
     SPATIAL_REF_SYS,
     get_srid_name,
 )
@@ -35,7 +34,7 @@ class Summariser:
         # cache
         self._grouping_time_zone_tz = tz.gettz(self.grouping_time_zone)
         # EPSG code for all polygons to be converted to (for footprints).
-        self.output_crs_epsg_code = FOOTPRINT_SRID
+        self.output_crs_epsg_code = None # FOOTPRINT_SRID
 
     def calculate_summary(self, product_name: str, time: Range) -> TimePeriodOverview:
         """
@@ -50,11 +49,7 @@ class Summariser:
                 (
                     func.ST_SRID(DATASET_SPATIAL.c.footprint).label("srid"),
                     func.count().label("dataset_count"),
-                    func.ST_Transform(
-                        func.ST_Union(DATASET_SPATIAL.c.footprint),
-                        self._target_srid(),
-                        type_=Geometry(),
-                    ).label("footprint_geometry"),
+                    func.ST_Union(DATASET_SPATIAL.c.footprint).label("footprint_geometry"),
                     func.sum(DATASET_SPATIAL.c.size_bytes).label("size_bytes"),
                     func.max(DATASET_SPATIAL.c.creation_time).label(
                         "newest_dataset_creation_time"
@@ -75,7 +70,7 @@ class Summariser:
                     func.sum(select_by_srid.c.size_bytes).label("size_bytes"),
                     func.ST_Union(
                         select_by_srid.c.footprint_geometry,
-                        type_=Geometry(srid=self._target_srid()),
+                        type_=Geometry()
                     ).label("footprint_geometry"),
                     func.max(select_by_srid.c.newest_dataset_creation_time).label(
                         "newest_dataset_creation_time"

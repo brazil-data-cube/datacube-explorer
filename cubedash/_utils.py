@@ -35,6 +35,8 @@ from datacube.model import Dataset, DatasetType, Range, MetadataType
 from datacube.utils import jsonify_document
 from datacube.utils.geometry import CRS
 
+from .custom_crs import CustomCRSConfigHandlerSingleton
+
 _TARGET_CRS = "EPSG:4326"
 
 DEFAULT_PLATFORM_END_DATE = {
@@ -59,9 +61,13 @@ _LOG = structlog.get_logger()
 
 def infer_crs(crs_str: str) -> Optional[str]:
     plausible_list = [PJCRS.from_epsg(code).to_wkt() for code in DEFAULT_CRS_INFERENCES]
-    closest_wkt = difflib.get_close_matches(crs_str, plausible_list, cutoff=0.38)
+    closest_wkt = difflib.get_close_matches(crs_str, plausible_list, cutoff=MATCH_CUTOFF)
     if len(closest_wkt) == 0:
-        return
+        try:
+            return CustomCRSConfigHandlerSingleton().get_custom_epsg(crs_str)
+        except RuntimeError as e:
+            _LOG.warn(str(e))
+            return
     epsg = PJCRS.from_wkt(closest_wkt[0]).to_epsg()
     return f"epsg:{epsg}"
 

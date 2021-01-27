@@ -18,6 +18,8 @@ from datacube.index import Index, index_connect
 from datacube.model import DatasetType
 from datacube.ui.click import config_option, environment_option, pass_config
 
+from cubedash.custom_crs import CustomCRSConfigHandlerSingleton
+
 # Machine (json) logging.
 _LOG = structlog.get_logger()
 
@@ -148,6 +150,11 @@ def _load_products(index: Index, product_names) -> List[DatasetType]:
     default=False,
     help="Prepare the database for use by datacube explorer",
 )
+@click.option(
+    "--custom-crs-definition-file",
+    help="Output jsonl logs to file",
+    type=click.Path(writable=True, dir_okay=True),
+)
 @click.argument("product_names", nargs=-1)
 def cli(
     config: LocalConfig,
@@ -160,6 +167,7 @@ def cli(
     verbose: bool,
     init_database: bool,
     force_refresh: bool,
+    custom_crs_definition_file: str,
 ):
     """
     Generate summary files for the given products
@@ -168,6 +176,9 @@ def cli(
 
     index = _get_index(config, "setup")
     store = SummaryStore.create(index)
+
+    if custom_crs_definition_file:
+        CustomCRSConfigHandlerSingleton().configure_database_with_custom_crs(index)
 
     if init_database:
         user_message("Initialising schema")
